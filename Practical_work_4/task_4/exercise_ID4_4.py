@@ -1,6 +1,6 @@
 import json
 import msgpack
-import  sqlite3
+import sqlite3
 
 #Функция для распаковки msg_file
 def open_msgpack(file_msg):
@@ -42,7 +42,9 @@ def open_txt(file_txt):
 
 #Создаём функцию для подключения к базе данных SQLite
 def connect_to_db(file_db):
-    return sqlite3.connect(file_db)
+    connection = sqlite3.connect(file_db)
+    connection.row_factory = sqlite3.Row
+    return connection
 
 #Создаём функцию для работы с таблицей к базе данных SQLite
 def insert_data(db, data):
@@ -87,20 +89,15 @@ def top_10(db):
     result = cursor.execute("""SELECT name, price, quantity, fromCity, isAvailable, views, version FROM table_task_4 ORDER BY version DESC LIMIT 10""")
     items = []
     for row in result.fetchall():
-        item = {"name":row[0],
-                "price":row[1],
-                "quantity":row[2],
-                "fromCity":row[3],
-                "isAvailable":row[4],
-                "views":row[5],
-                "version":row[6]
-
-        }
+        item = dict(row)
         items.append(item)
 
     db.commit()
 
-    return items
+    with open("top_10.json", "w") as file_json:
+        file_json.write(json.dumps(items, ensure_ascii=False))
+
+    return
 
 #Анализируем цены товаров, находим (сумму, мин, макс, среднее) для каждой группы (fromCity),
 #а также количество товаров в группе
@@ -117,19 +114,15 @@ def analises_price_products(db):
                                 ORDER BY all_quantity DESC""")
     items = []
     for row in result.fetchall():
-        item = {"fromCity":row[0],
-                "sum_price":row[1],
-                "min_price": row[2],
-                "max_price": row[3],
-                "avg_price": row[4],
-                "all_quantity": row[5]
-
-        }
+        item = dict(row)
         items.append(item)
 
     db.commit()
 
-    return items
+    with open("nalises_price_products.json", "w") as file_json:
+        file_json.write(json.dumps(items, ensure_ascii=False))
+
+    return
 
 
 # Анализируем остатки товаров (quantity), найдя (сумму, мин, макс, среднее) для каждой группы товаров
@@ -145,17 +138,15 @@ def analises_quantity_products(db):
                                 ORDER BY sum_quantity DESC""")
     items = []
     for row in result.fetchall():
-        item = {"fromCity": row[0],
-                "sum_quantity": row[1],
-                "min_quantity": row[2],
-                "max_quantity": row[3],
-                "avg_quantity": row[4]
-                }
+        item = dict(row)
         items.append(item)
 
     db.commit()
 
-    return items
+    with open("analises_quantity_products.json", "w") as file_json:
+        file_json.write(json.dumps(items, ensure_ascii=False))
+
+    return
 
 # Найти товары, количество которых болше 700
 def my_analises_products(db):
@@ -167,20 +158,15 @@ def my_analises_products(db):
 
     items = []
     for row in result.fetchall():
-        item = {"name": row[0],
-                "price": row[1],
-                "quantity": row[2],
-                "fromCity": row[3],
-                "isAvailable": row[4],
-                "views": row[5],
-                "version": row[6]
-
-                }
+        item = dict(row)
         items.append(item)
 
     db.commit()
 
-    return items
+    with open("my_analises_products.json", "w") as file_json:
+        file_json.write(json.dumps(items, ensure_ascii=False))
+
+    return
 
 
 data = open_msgpack("task_4_var_19_product_data.msgpack")
@@ -189,23 +175,10 @@ db = connect_to_db("base_4")
 change_products = open_txt("task_4_var_19_update_data.text")
 #handle_updates(db, change_products)
 
-def write_json(name, data):
-    with open(name, "w", encoding="utf-8") as file:
-        file.write(json.dumps(data, ensure_ascii=False))
 
-print("вывести топ-10 самых обновляемых товаров")
-print(top_10(db))
-write_json("top_10.json", top_10(db))
-print("===============")
-print("проанализировать цены товаров, найдя (сумму, мин, макс, среднее) для каждой группы, а также количество товаров в группе")
-print(analises_price_products(db))
-write_json("analises_price_products.json", analises_price_products(db))
-print("===============")
-print("проанализировать остатки товаров, найдя (сумму, мин, макс, среднее) для каждой группы товаров")
-print(analises_quantity_products(db))
-write_json("analises_quantity_products.json", analises_quantity_products(db))
-print("===============")
-print("Найти товары, количество которых болше 700")
-print(my_analises_products(db))
-write_json("my_analises_products.json", my_analises_products(db))
+
+top_10(db)
+analises_price_products(db)
+analises_quantity_products(db)
+my_analises_products(db)
 

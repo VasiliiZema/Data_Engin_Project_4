@@ -38,7 +38,9 @@ def open_txt(file_txt):
 
 #Создаём функцию для подключения к базе данных SQLite
 def connect_to_db(file_db):
-    return sqlite3.connect(file_db)
+    connection = sqlite3.connect(file_db)
+    connection.row_factory = sqlite3.Row
+    return connection
 
 #Создаём функцию для работы с таблицей к базе данных SQLite
 def insert_data(db, data):
@@ -69,15 +71,8 @@ def sorted_data(db, limit):
                                 LIMIT ?""", [limit])
 
     items = []
-    for row in result_1:
-        item = dict()
-        item["artist"] = row[1]
-        item["song"] = row[2]
-        item["duration_ms"] = row[3]
-        item["year"] = row[4]
-        item["tempo"] = row[5]
-        item["genre"] = row[6]
-        item["instrumentalness"] = row[7]
+    for row in result_1.fetchall():
+        item = dict(row)
         items.append(item)
 
     cursor.close()
@@ -97,17 +92,16 @@ def describe_data(db):
                                             AVG(duration_ms) AS avg_duration_ms
                                     FROM table_task_3""")
 
-    print("Вывод (суммы, мин, макс, среднего) по числовому полю 'duration_ms'")
-    describe = result_2.fetchall()[0]
-    item = dict({ "sum_duration_ms": describe[0],
-                  "min_duration_ms": describe[1],
-                  "max_duration_ms": describe[2],
-                  "avg_duration_ms": describe[3]
-                })
+    items = []
+    for row in result_2.fetchall():
+        item = dict(row)
+        items.append(item)
 
-    print(item)
 
     cursor.close()
+
+    with open("describe_data.json", "w") as file_json:
+        file_json.write(json.dumps(items, ensure_ascii=False))
 
     return
 
@@ -123,9 +117,12 @@ def count_caregori_data(db, limit):
                                     ORDER BY 2 DESC
                                     LIMIT ?""", [limit])
 
-    items = [dict(result_3.fetchall())]
-    print(items)
+    items = []
+    for row in result_3.fetchall():
+        item = dict(row)
+        items.append(item)
 
+    cursor.close()
     with open("filter_table_task3.json", "w", encoding="utf-8") as file_json:
         file_json.write(json.dumps(items, ensure_ascii=False))
 

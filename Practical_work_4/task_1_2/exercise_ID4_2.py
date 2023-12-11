@@ -56,9 +56,12 @@ def fist_query(db, name):
                                     FROM table_task_2
                                     WHERE name = (SELECT name FROM table_task_1 WHERE name = ?) 
                                                                         """, [name])
-
+    items = []
     item = dict(result_2.fetchone())
-    print(item)
+    items.append(item)
+
+    with open("describe_price.json", "w") as file_json:
+        file_json.write(json.dumps(items, ensure_ascii=False))
 
     cursor.close()
     return
